@@ -1,0 +1,8 @@
+.title-project{
+	text-align: center;
+}
+.site-chat{
+	height: 600px;
+	overflow-y: scroll;
+	margin-bottom: 20px;
+}

@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+  <!-- Bootstrap CSS -->
+  <link href="https://stackpath.bootstrapcdn.com/bootswatch/4.3.1/sketchy/bootstrap.min.css" rel="stylesheet" integrity="sha384-N8DsABZCqc1XWbg/bAlIDk7AS/yNzT5fcKzg/TwfmTuUqZhGquVmpb5VvfmLcMzp"
+    crossorigin="anonymous">
+  <link href='https://fonts.googleapis.com/css?family=Kanit&subset=thai,latin' rel='stylesheet' type='text/css'>
+  <title>Hello, world!</title>
+  <link rel="stylesheet" type="text/css" href="css/style.css">
+  <!-- libray socket.io -->
+  <script src="/socket.io/socket.io.js"></script>
+  <!-- end -->
+  <style type="text/css">
+    body {
+      font-family: 'Kanit', sans-serif;
+    }
+
+    .title-project {
+      text-align: center;
+    }
+
+    .site-chat {
+      height: 600px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+      padding-top: 1px;
+    }
+
+    /* width */
+
+    ::-webkit-scrollbar {
+      width: 2px;
+    }
+
+    /* Track */
+
+    ::-webkit-scrollbar-track {
+      box-shadow: inset 0 0 5px grey;
+      border-radius: 10px;
+    }
+
+    /* Handle */
+
+    ::-webkit-scrollbar-thumb {
+      background: rgb(236, 181, 181);
+      border-radius: 10px;
+    }
+
+    /* Handle on hover */
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #b30000;
+    }
+
+    .text-chat {
+      border: 1px solid #e6e6e6;
+      cursor: pointer;
+      padding: 10px;
+      margin-top: -1px;
+      font-weight: 100;
+    }
+
+    .my-text-chat {
+      border: 1px solid #e6e6e6;
+      cursor: pointer;
+      padding: 10px;
+      margin-top: -1px;
+      text-align: right;
+      font-weight: 100;
+    }
+
+    .my-text-chat:hover {
+      background-color: rgb(240, 120, 9);
+    }
+
+    .text-chat:hover {
+      background-color: aquamarine;
+    }
+
+    .text-name {
+      border: 1px solid #e6e6e6;
+      cursor: pointer;
+      padding: 10px;
+      color: darkgreen;
+      margin-top: -1px;
+    }
+
+    .text-name:hover {
+      background-color: pink;
+      color: white;
+    }
+  </style>
+
+
+
+  <script>
+    var socket = io();
+    var username = ""
+    var userID = generateId(20);
+    function generateId(length) {
+      var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghiklmnopqrstuvwxyz".split(
+        ""
+      );
+      if (!length) {
+        length = Math.floor(Math.random() * chars.length);
+      }
+      var str = "";
+      for (var i = 0; i < length; i++) {
+        str += chars[Math.floor(Math.random() * chars.length)];
+      }
+      return str;
+    }
+
+  </script>
+
+</head>
+
+<body>
+
+  <!-- กล่องกรอกชื่อ -->
+  <div class="container" style="height:100vh;" id="boxUser">
+    <div class="d-flex justify-content-center align-items-center" style="height:calc(100vh - 100px);">
+      <div class="input-group mb-3">
+        <input type="text" class="form-control" placeholder="Enter your name" aria-describedby="button-addon2" id="nameUser"> 
+        <div class="input-group-append">
+          <button class="btn btn-primary" type="button" id="button-addon2" onclick="joinChat()">join chat</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- end กล่องกรอกชื่อ -->
+
+  <div class="container-fluid" id="app" style="display:none;">
+    <h1>
+      <b>Chat na ka!</b>
+    </h1>
+    <div class="row">
+      <div class="col-md-3">
+        <div class="card" style="width: 100%;">
+          <div class="card-header" style="background-color: cornflowerblue;color: white;">
+            <b>Online</b>
+          </div>
+          <div class="card-body">
+            <div class="site-name" id="siteName">
+              <div id="listName">
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-9">
+        <div class="card" style="width: 100%;">
+          <div class="card-header" style="background-color: cornflowerblue;color: white;">
+            <b>Chat box</b>
+          </div>
+          <div class="card-body">
+            <div class="site-chat" id="siteChat">
+              <div id="listChat">
+
+              </div>
+            </div>
+            <input class="form-control" type="text" id="myInput">
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+
+
+
+  <script>
+    var input = document.getElementById("myInput");
+    input.addEventListener("keyup", function (event) {
+      if (event.keyCode === 13) { // enter
+        if (input.value == "") {
+          return
+        }
+        socket.emit('chat message', input.value, username, userID);
+        input.value = ""
+      }
+    });
+
+    window.addEventListener('beforeunload', (event) => {
+      socket.emit('removeuser', username);
+    });
+
+    socket.on('chat message', function (msg) {
+      addMessage(msg)
+    });
+    socket.on('checkuser', function (msg) {
+      checkUser(msg)
+    });
+    socket.on('update name', function (msg) {
+      updateAlluser(msg)
+    });
+
+    
+    function joinChat() {
+      let user = document.getElementById("nameUser").value;
+      if (user != "") {
+        socket.emit('join', user, userID);
+      } else {
+        alert("please enter your name!")
+      }
+    }
+
+    
+    function addMessage(info) { // เพิ่มแชทเข้า กล่อง
+      if (info.user == username && info.id == userID) {
+        document.getElementById('listChat').innerHTML += `<div class="my-text-chat">${info.msg}</div>`
+      } else {
+        document.getElementById('listChat').innerHTML += `<div class="text-chat">(${info.user} say ) : </b>${info.msg}</div>`
+      }
+      scrollToLast(); // เรีบกใช้ function scroll
+    }
+
+    function checkUser(info) {
+      let appChat = document.getElementById("app")
+      let boxuser = document.getElementById("boxUser")
+      if (info.status && info.id == userID) {
+        appChat.style.display = "block"
+        boxuser.style.display = "none"
+        username = info.name
+        socket.emit('update username');
+      } else if (!info.status && info.id == userID) {
+        alert("Name is used!")
+      }
+    }
+    function scrollToLast() { // function เมื่อมีแชท หากข้อความ เลยกล่อง จะ scroll ลงมาให้
+      var objDiv = document.getElementById("siteChat");
+      objDiv.scrollTop = objDiv.scrollHeight;
+    }
+    
+    function updateAlluser(all) {
+      document.getElementById("listName").innerHTML = ``  
+      for (let i = 0; i < all.length; i++) {
+        let element = all[i];
+        document.getElementById("listName").innerHTML += `<div class="text-name">${element}</div>`
+      }
+
+    }
+
+
+
+  </script>
+
+</body>
+
+</html>
